@@ -1,0 +1,138 @@
+# Training Pipeline Configuration
+# Version: 1.0.0
+
+# Data Loading
+data_loading:
+  s3_base_path: s3://uip-datalake-bucket-prod/sf_trino/pmannem/noncorelogsv3full
+  processed_output_path: s3://uip-datalake-bucket-prod/sf_trino/trino_query_predictor/processed_data
+  start_date: "2025-08-01"
+  end_date: "2025-10-01"
+  sample_fraction: null  # null = full data, 0.1 = 10% sample for testing
+
+  # Labeling thresholds
+  cpu_threshold_seconds: 300      # 5 minutes
+  memory_threshold_gb: 10         # 10 GB
+  heavy_error_types:
+    - EXCEEDED_TIME_LIMIT
+    - EXCEEDED_SCAN_LIMIT
+    - EXCEEDED_CPU_LIMIT
+
+  # Filters
+  require_non_curated: true
+  exclude_query_types:
+    - DATA_DEFINITION
+    - DESCRIBE
+    - EXPLAIN
+
+# Boundary Sampling
+boundary_sampling:
+  enabled: true
+  balance_ratio: 5.0              # Target 5:1 small:heavy ratio
+  boundary_sampling_max_boost: 2.0              # Maximum sampling multiplier at boundary
+  boundary_sampling_min_multiplier: 0.05        # Minimum sampling multiplier far from boundary
+  guarantee_close_threshold: 0.5  # 100% sampling for queries <50% distance from boundary
+  enable_safety_adjustment: true  # Auto-adjust to hit exact target ratio
+
+# Checkpointing
+checkpointing:
+  enabled: true
+  s3_path: s3://uip-datalake-bucket-prod/sf_trino/trino_query_predictor/checkpoints
+  retention_days: 7
+
+# Features
+features:
+  # Base features (production featurizer)
+  enable_base_features: true
+  base_feature_count: 78
+
+  # Historical features (cold-start handling)
+  enable_historical_features: true
+  historical_feature_count: 17
+  historical_stats_path: s3://uip-datalake-bucket-prod/sf_trino/trino_query_predictor/historical_stats
+
+  # TF-IDF features (SQL-aware with optimizations)
+  enable_tfidf: true
+  tfidf_vocab_size: 250       # Optimized for SQL queries
+  min_df: 100                 # Increased to filter rare terms
+  max_df: 0.80                # Lowered to filter very common terms
+  use_binary: true            # Binary presence/absence (better for SQL)
+  filter_sql_keywords: true   # Filter common SQL keywords
+  normalize_sql: true         # Normalize literals and numbers
+
+  # Total features: 78 + 17 + 250 = 345
+  total_features: 345
+
+  # Output paths
+  output_path: s3://uip-datalake-bucket-prod/sf_trino/trino_query_predictor/features
+
+# Model Training
+model:
+  algorithm: xgboost
+
+  # XGBoost hyperparameters
+  n_estimators: 100
+  max_depth: 6
+  learning_rate: 0.1
+  subsample: 0.8
+  colsample_bytree: 0.8
+
+  # Cross-validation
+  cv_folds: 5
+
+  # Threshold optimization
+  cost_fn: 100.0    # Cost of missing heavy query (false negative)
+  cost_fp: 1.0      # Cost of over-routing small query (false positive)
+
+  # Export
+  export_format: onnx
+  models_path: s3://uip-datalake-bucket-prod/sf_trino/trino_query_predictor/models
+
+# PRD Requirements
+prd_requirements:
+  target_heavy_recall: 0.98   # 98% recall for heavy queries
+  target_fnr: 0.02            # ≤2% false negative rate (relaxed from 1%)
+  target_f1: 0.85             # ≥85% F1 score
+  target_roc_auc: 0.90        # ≥90% ROC-AUC (relaxed from 95%)
+
+# Time-based splits
+time_splits:
+  train_days: 30    # Training period (first 30 days)
+  val_days: 7       # Validation period (next 7 days)
+  test_days: 7      # Test period (last 7 days)
+
+# Spark Configuration
+spark:
+  driver_memory: 16G
+  driver_cores: 4
+  executor_memory: 20G
+  executor_cores: 5
+  min_executors: 2
+  max_executors: 20
+
+# Validation Settings
+validation:
+  # Feature parity validation
+  parity_tolerance: 1.0e-6           # Maximum acceptable difference for feature parity
+  parity_samples: 100                # Number of samples to test for parity
+  parity_success_threshold: 0.5      # Maximum % mismatch allowed (0.5%)
+
+  # ONNX validation
+  onnx_tolerance: 1.0e-5             # Maximum acceptable difference for ONNX predictions
+  onnx_opset_version: 12             # ONNX opset version for export
+  onnx_validation_samples: 1000      # Number of samples to test ONNX parity
+
+# Logging Configuration
+logging:
+  level: INFO                        # Logging level (DEBUG, INFO, WARNING, ERROR)
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  log_to_file: false                 # Whether to log to file in addition to console
+  log_file_path: null                # Path to log file (if log_to_file is true)
+
+# Analysis (optional, for debugging)
+analysis:
+  enabled: false  # Set true for detailed analysis (slower)
+
+# S3 Configuration
+s3:
+  bucket: uip-datalake-bucket-prod
+  prefix: sf_trino/trino_query_predictor

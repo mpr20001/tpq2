@@ -1,0 +1,22 @@
+{
+  "include": [
+    "query_predictor",
+    "tests"
+  ],
+  "exclude": [
+    "**/__pycache__",
+    "**/node_modules",
+    "**/.venv",
+    "**/venv",
+    "poc",
+    "presto-query-predictor"
+  ],
+  "venvPath": ".",
+  "venv": "venv",
+  "pythonVersion": "3.13",
+  "typeCheckingMode": "basic",
+  "useLibraryCodeForTypes": true,
+  "reportMissingImports": true,
+  "reportMissingTypeStubs": false
+}
+

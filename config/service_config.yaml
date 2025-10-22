@@ -1,0 +1,101 @@
+# Trino Query Predictor Service Configuration
+# This is the template configuration with service skeleton. Will be updated as we go.
+
+service:
+  name: trino-query-predictor
+  version: 1.0.0
+  port: 8000
+  workers: 4
+
+# Model configuration (will be used later)
+# S3 paths can be overridden via environment variables:
+#   - QUERY_PREDICTOR_S3_BUCKET: S3 bucket name
+#   - QUERY_PREDICTOR_S3_PREFIX: S3 prefix/folder
+#   - QUERY_PREDICTOR_MODEL_FILE: Model filename
+#   - QUERY_PREDICTOR_FEATURE_SPEC_FILE: Feature spec filename
+#   - QUERY_PREDICTOR_HISTORICAL_STATS_FILE: Historical stats filename
+#   - QUERY_PREDICTOR_MODEL_PATH: Full S3 path to model (overrides components)
+#   - QUERY_PREDICTOR_FEATURE_SPEC_PATH: Full S3 path to feature spec
+#   - QUERY_PREDICTOR_HISTORICAL_STATS_PATH: Full S3 path to historical stats
+model:
+  s3_bucket: uip-datalake-bucket-prod
+  s3_prefix: sf_trino/trino_query_predictor
+  model_file: model_v20251005.onnx
+  feature_spec_file: feature_spec_v20251005.json
+  historical_stats_file: historical_stats_v20251005.json
+  threshold: 0.5
+  confidence_warning_threshold: 0.7
+
+  # Full S3 paths
+  model_path: s3://uip-datalake-bucket-prod/sf_trino/trino_query_predictor/model_v20251005.onnx
+  feature_spec_path: s3://uip-datalake-bucket-prod/sf_trino/trino_query_predictor/feature_spec_v20251005.json
+  historical_stats_path: s3://uip-datalake-bucket-prod/sf_trino/trino_query_predictor/historical_stats_v20251005.json
+
+# Zero-cost filter configuration (will be used later)
+zero_cost_filter:
+  enabled: true
+  safe_categories:
+    - DDL_CREATE
+    - DESCRIBE
+    - COMMAND_EXPLAIN
+    - SESSION_SET
+    - METADATA_QUERY
+    - SHOW_TABLES
+    - SHOW_COLUMNS
+
+# Featurizer configuration
+featurizer:
+  version: 3.0.0
+
+  # Historical features toggle
+  # When false: 78 features (9 extractors: SQL, TableJoin, Where, Aggregation, AST, Context, QueryType, SetOperation, NullAware)
+  # When true: 95 features (10 extractors: above + Historical)
+  enable_historical_features: false  # Set true when historical_stats are available
+
+  ast_timeout_ms: 50
+
+  # Expected feature count (dynamically determined by enable_historical_features)
+  # 78 features: 72 base features + 6 NULL-aware features
+  # 95 features: 78 base features + 17 historical features
+  expected_feature_count: 78  # Will be 95 when historical features enabled
+
+  # Feature spec configuration
+  feature_spec:
+    use_feature_spec: true  # Enable/disable feature spec filtering
+    auto_load_from_s3: true  # Auto-load feature spec from S3 on startup
+    importance_threshold: 0.0  # Minimum feature importance (0.0 = keep all)
+    # Set to 0.01 to disable features with importance < 1%
+
+  # Parser configuration
+  parsers:
+    ast_parser_timeout_ms: 50  # Timeout for AST parsing
+    sql_parser_max_depth: 50  # Max recursion depth for SQL parsing
+
+# Performance configuration (temporary values)
+performance:
+  max_workers: 4
+  request_timeout_ms: 500
+  stage0_timeout_ms: 10
+  stage1_timeout_ms: 200
+  feature_extraction_timeout_ms: 100
+
+# Logging configuration
+logging:
+  level: "INFO"
+  handler_type: "json"
+  add_source: true
+  output: stdout
+
+# AWS configuration
+aws:
+  region: us-west-2
+
+# S3 Cache configuration
+s3_cache:
+  enabled: true  # Enable local caching of S3 files
+  cache_dir: /tmp/query_predictor_cache  # Local cache directory
+  cache_ttl_hours: 24  # Cache time-to-live in hours
+  max_cache_size_mb: 500  # Maximum cache size in MB
+  use_stale_cache_on_error: true  # Use stale cache if S3 is unavailable
+  retry_attempts: 3  # Number of retry attempts for S3 operations
+  retry_delay_seconds: 1  # Initial delay between retries (exponential backoff)

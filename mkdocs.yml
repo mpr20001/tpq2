@@ -1,0 +1,12 @@
+site_name: Trino Query Predictor
+theme:
+  name: material
+  palette:
+    primary: light blue
+    accent: pink
+markdown_extensions:
+  - attr_list
+  - admonition
+  - codehilite
+nav:
+  - README: README.md
