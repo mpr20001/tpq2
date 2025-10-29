@@ -39,6 +39,27 @@ UNION_COUNT_NORMALIZER = 5.0
 # UNION ALL count (typical: 0-2, complex: 5+)
 UNION_ALL_COUNT_NORMALIZER = 5.0
 
+# WITH clause count (typical: 0-1, complex: 3+)
+WITH_COUNT_NORMALIZER = 3.0
+
+# CTE count (typical: 0-2, complex: 5+)
+CTE_COUNT_NORMALIZER = 5.0
+
+# LATERAL VIEW count (typical: 0-1, complex: 3+, Spark/Hive specific)
+LATERAL_VIEW_COUNT_NORMALIZER = 3.0
+
+# Window function count (typical: 0-2, complex: 5+)
+WINDOW_FUNC_COUNT_NORMALIZER = 5.0
+
+# DISTINCT count (typical: 0-3, complex: 10+)
+DISTINCT_COUNT_NORMALIZER = 10.0
+
+# HAVING count (typical: 0-1, complex: 3+)
+HAVING_COUNT_NORMALIZER = 3.0
+
+# COALESCE/NULLIF count (typical: 0-5, complex: 10+)
+COALESCE_NULL_IF_COUNT_NORMALIZER = 10.0
+
 # ============================================================================
 # AST Parsing Configuration
 # ============================================================================

@@ -90,6 +90,21 @@ class HistoricalFeatureExtractor(BaseFeatureExtractor):
             catalog = query_data.catalog  # Can be None
             schema = query_data.schema    # Can be None
 
+            # CRITICAL FIX: Handle Spark UDF NULL representation
+            # Spark may pass empty strings or 'null' instead of None
+            def is_null_or_empty(value):
+                """Check if value is NULL in various representations."""
+                return (
+                    value is None or
+                    value == '' or
+                    value == 'null' or
+                    value == 'NULL'
+                )
+
+            # Normalize NULL values for consistent handling
+            catalog = None if is_null_or_empty(catalog) else catalog
+            schema = None if is_null_or_empty(schema) else schema
+
             # Get stats (returns None if not found)
             user_stats = self.stats_schema.get_user_stats(user)
             catalog_stats = self.stats_schema.get_catalog_stats(catalog)

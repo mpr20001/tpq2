@@ -408,11 +408,23 @@ The `FeatureExtractor` class uses a modular architecture with specialized extrac
 - **TableJoinExtractor** (12 features): table_count, join_count, with_clause_count, cte_complexity, etc.
 - **WhereClauseExtractor** (10 features): where_condition_count, in_clause_count, max_in_list_size, etc.
 - **AggregationExtractor** (8 features): group_by_count, count_function_count, window_function_count, etc.
-- **ASTFeatureExtractor** (10 features): ast_depth, ast_node_count, case_when_count, parse_timeout, etc.
+- **ASTFeatureExtractor** (10 features): ast_depth, ast_breadth, ast_with_count, ast_cte_count, ast_lateral_view_count, ast_window_func_count, ast_distinct_count, ast_having_count, ast_case_when_count, ast_coalesce_null_if_count
 - **ContextExtractor** (8 features): user_hash, catalog_hash, hour_sin, hour_cos, is_business_hours, etc.
 - **QueryTypeExtractor** (5 features): is_select_query, is_insert_query, is_create_table_as, etc.
 - **SetOperationExtractor** (4 features): union_count, except_count, intersect_count, has_multiple_statements
 - **NullAwareExtractor** (6 features): is_catalog_null, is_schema_null, inferred_catalog_count, etc.
+
+**AST Features Detail** (extracted from sqlglot parsing with 200ms timeout):
+- `ast_depth`: Maximum AST tree depth (SELECT nesting level)
+- `ast_breadth`: Maximum tree width (children per node)
+- `ast_with_count`: WITH clause count (CTEs)
+- `ast_cte_count`: Common Table Expression count
+- `ast_lateral_view_count`: LATERAL VIEW count (Spark/Hive specific)
+- `ast_window_func_count`: Window function count (ROW_NUMBER, RANK, DENSE_RANK, etc.)
+- `ast_distinct_count`: DISTINCT keyword count
+- `ast_having_count`: HAVING clause count
+- `ast_case_when_count`: CASE WHEN expression count
+- `ast_coalesce_null_if_count`: COALESCE/NULLIF/NVL function count
 
 ### Historical Features (17 features, optional)
 - **User Features** (6): query_count, heavy_rate, avg_cpu_seconds, p90_cpu_seconds, avg_memory_gb, catalog_diversity

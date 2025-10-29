@@ -240,9 +240,16 @@ class TestASTMetrics:
             parse_timeout=False,
             node_count=100,
             depth=5,
+            breadth=10,
+            with_count=1,
             cte_count=2,
+            lateral_view_count=0,
+            window_func_count=1,
+            distinct_count=2,
+            having_count=0,
             subquery_count=3,
             case_when_count=1,
+            coalesce_null_if_count=0,
             max_branches=4,
             union_count=0,
             union_all_count=1
@@ -250,6 +257,7 @@ class TestASTMetrics:
         assert metrics.parse_success is True
         assert metrics.node_count == 100
         assert metrics.depth == 5
+        assert metrics.breadth == 10
 
     def test_failed_parse(self):
         metrics = ASTMetrics(
@@ -257,9 +265,16 @@ class TestASTMetrics:
             parse_timeout=False,
             node_count=0,
             depth=0,
+            breadth=0,
+            with_count=0,
             cte_count=0,
+            lateral_view_count=0,
+            window_func_count=0,
+            distinct_count=0,
+            having_count=0,
             subquery_count=0,
             case_when_count=0,
+            coalesce_null_if_count=0,
             max_branches=0,
             union_count=0,
             union_all_count=0
@@ -272,9 +287,16 @@ class TestASTMetrics:
             parse_timeout=True,
             node_count=0,
             depth=0,
+            breadth=0,
+            with_count=0,
             cte_count=0,
+            lateral_view_count=0,
+            window_func_count=0,
+            distinct_count=0,
+            having_count=0,
             subquery_count=0,
             case_when_count=0,
+            coalesce_null_if_count=0,
             max_branches=0,
             union_count=0,
             union_all_count=0

@@ -226,8 +226,9 @@ class TestASTFeatureExtractor:
         features = extractor.extract(query_data)
 
         assert len(features) == extractor.feature_count
-        # ast_parse_failed should be 0 for valid query
-        assert features[-1] == 0.0
+        assert len(features) == 10  # AST extractor should produce 10 features
+        # All features should be floats
+        assert all(isinstance(f, float) for f in features)
 
     def test_complex_query_metrics(self, config):
         extractor = ASTFeatureExtractor(config)
@@ -260,7 +261,7 @@ class TestASTFeatureExtractor:
         features = extractor.extract(query_data)
 
         feature_names = extractor.get_feature_names()
-        case_when_idx = feature_names.index('case_when_count')
+        case_when_idx = feature_names.index('ast_case_when_count')
         assert features[case_when_idx] > 0
 
     def test_invalid_query_fallback(self, config):
@@ -268,10 +269,14 @@ class TestASTFeatureExtractor:
         query_data = QueryData(query='SELECT FROM', user='test')  # This query fails to parse
         features = extractor.extract(query_data)
 
-        # Should return fallback features
+        # Should return fallback features using heuristics
         assert len(features) == extractor.feature_count
-        # ast_parse_failed should be 1.0
-        assert features[-1] == 1.0
+        assert len(features) == 10
+        # Fallback uses heuristics: depth from SELECT count (1/10=0.1), breadth from comma count (1/100=0.01)
+        assert features[0] == 0.1  # ast_depth (1 SELECT normalized)
+        assert features[1] == 0.01  # ast_breadth (1 normalized)
+        # Rest should be 0.0 (no WITH, CTE, etc.)
+        assert all(f == 0.0 for f in features[2:])
 
 
 class TestContextExtractor:

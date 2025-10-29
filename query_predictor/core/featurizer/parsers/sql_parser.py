@@ -59,7 +59,9 @@ class SQLPatternParser:
             # Extract from JOIN clauses
             tables.update(self.JOIN_PATTERN.findall(query))
 
-            return list(tables)
+            # CRITICAL FIX: Sort for deterministic ordering
+            # This ensures same feature values in Spark UDF and local execution
+            return sorted(list(tables))
 
         except Exception as e:
             logger.debug(f"Error extracting tables: {e}")

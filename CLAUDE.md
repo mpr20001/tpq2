@@ -173,6 +173,29 @@ extractors = [
 ]
 ```
 
+### AST Features (Indices 45-54)
+ASTFeatureExtractor extracts 10 features using sqlglot parser with timeout protection. **These features are critical for parity** and use deterministic extraction:
+
+**Features** (in exact order):
+1. **ast_depth** (45): Maximum AST tree depth - measures SELECT nesting level
+2. **ast_breadth** (46): Maximum tree width - children per node
+3. **ast_with_count** (47): WITH clause count (Common Table Expressions)
+4. **ast_cte_count** (48): CTE count from sqlglot parsing
+5. **ast_lateral_view_count** (49): LATERAL VIEW count (Spark/Hive specific)
+6. **ast_window_func_count** (50): Window functions (ROW_NUMBER, RANK, DENSE_RANK, etc.)
+7. **ast_distinct_count** (51): DISTINCT keyword count
+8. **ast_having_count** (52): HAVING clause count
+9. **ast_case_when_count** (53): CASE WHEN expression count
+10. **ast_coalesce_null_if_count** (54): COALESCE/NULLIF/NVL function count
+
+**Critical Implementation Details**:
+- **Deterministic traversal**: Uses `sorted(node.args.keys())` for consistent depth/breadth calculation
+- **Timeout**: 200ms (increased from 50ms to reduce non-determinism in distributed environments)
+- **Fallback features**: Uses heuristics when parsing fails/times out
+- **Never modify extraction order**: Changes break train-serve parity
+
+**Code location**: `query_predictor/core/featurizer/parsers/ast_parser.py:278-356`
+
 ### NULL Handling is Explicit
 The system handles 3.8M NULL catalogs and 4.1M NULL schemas. `NullAwareExtractor` provides 6 features for NULL detection and inference. **Never use `.isnull()` checks** - use the safe utilities in `query_predictor/core/featurizer/utils.py`:
 
@@ -212,6 +235,90 @@ import boto3
 s3 = boto3.client('s3')
 obj = s3.get_object(Bucket='bucket', Key='model.onnx')
 ```
+
+## Feature Specification System
+
+The codebase uses a **dynamic FeatureSpec** system to ensure train-serve parity without manual synchronization:
+
+### How It Works
+
+1. **Automatic Feature Discovery**: `FeatureSpec.from_extractors()` reads feature names from each extractor dynamically
+2. **No Hardcoded Counts**: Feature counts are computed from actual extractors
+3. **Version Tracking**: `FeatureExtractor.VERSION = "3.0.0"` tracks breaking changes
+4. **Enable/Disable Support**: Can disable entire feature groups or individual features
+
+**Key Implementation** (`query_predictor/core/featurizer/feature_extractor.py:80-84`):
+```python
+# FeatureSpec is built automatically from extractors
+if self.feature_spec is None:
+    self.feature_spec = FeatureSpec.from_extractors(self.extractors, self.VERSION)
+
+# Feature names are extracted from FeatureSpec
+self.feature_names = self.feature_spec.active_feature_names
+```
+
+### Why This Matters
+
+- **Automatic Synchronization**: Changing feature names in an extractor automatically updates FeatureSpec
+- **Train-Serve Parity**: Training and inference use identical feature names/order
+- **No Manual Updates**: Adding/removing features doesn't require updating hardcoded lists
+
+**Example**:
+```python
+# Both training and inference use same FeatureExtractor
+extractor = FeatureExtractor(config, historical_stats=stats)
+
+# FeatureSpec contains all metadata
+extractor.feature_spec.feature_groups   # Dict of feature groups
+extractor.feature_spec.active_feature_names  # Ordered list of features
+extractor.feature_count  # Total active feature count
+```
+
+**Files**:
+- `query_predictor/core/types/feature_spec.py` - FeatureSpec dataclass with S3 save/load
+- `query_predictor/core/types/feature_group.py` - FeatureGroup for organizing related features
+- `query_predictor/core/featurizer/feature_extractor.py` - Main orchestrator using FeatureSpec
+
+## Recent Parity Fixes (2025-10-29)
+
+### Problem
+100% feature parity failure between training (Spark UDF) and inference (local execution), causing model performance to degrade from 91% recall (validation) to 60% recall (test).
+
+### Root Causes Fixed
+
+1. **AST Feature Mismatch** (Features 47, 54 - 100% mismatch)
+   - **Cause**: Training notebook expected different AST features than code provided
+   - **Fix**: Updated `ASTFeatureExtractor.FEATURE_NAMES` to match training expectations exactly
+   - **Files**: `ast_extractor.py`, `ast_metrics.py`, `ast_parser.py`, `constants.py`
+
+2. **AST Parser Non-Determinism** (Feature 45 - 80% mismatch)
+   - **Cause**: Dictionary iteration without sorting caused different AST depth calculations
+   - **Fix**: Changed `for arg_value in node.args.values()` to `for arg_key in sorted(node.args.keys())`
+   - **Files**: `ast_parser.py:297` (critical line)
+
+3. **Historical NULL Handling** (Feature 81 - 40% mismatch)
+   - **Cause**: Spark passes empty strings instead of None for NULL values
+   - **Fix**: Added `is_null_or_empty()` helper to normalize NULL representations
+   - **Files**: `historical_extractor.py:95-106`
+
+4. **Set Iteration Non-Determinism** (Various features)
+   - **Cause**: Converting sets to lists without sorting
+   - **Fix**: Changed `return list(tables)` to `return sorted(list(tables))`
+   - **Files**: `sql_parser.py:64`
+
+### Files Modified
+- `query_predictor/core/featurizer/extractors/ast_extractor.py` - Feature names and extraction logic
+- `query_predictor/core/types/ast_metrics.py` - Added new fields for missing features
+- `query_predictor/core/featurizer/parsers/ast_parser.py` - Deterministic traversal, breadth calculation
+- `query_predictor/core/featurizer/extractors/historical_extractor.py` - NULL handling
+- `query_predictor/core/featurizer/parsers/sql_parser.py` - Sorted table lists
+- `query_predictor/core/featurizer/constants.py` - New normalizer constants
+
+### Expected Impact
+- AST features (45-54): Should now match exactly
+- Historical feature 81: Consistent NULL handling
+- All operations: Deterministic across environments
+- **Target**: <0.5% mismatch rate in parity validation
 
 ## Training Pipeline (Jupyter Notebooks)
 
