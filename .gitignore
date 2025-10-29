@@ -1,0 +1,263 @@
+# ============================================================================
+# Python
+# ============================================================================
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# ============================================================================
+# Virtual Environments
+# ============================================================================
+
+venv/
+.venv/
+env/
+.env/
+ENV/
+env.bak/
+venv.bak/
+
+# ============================================================================
+# IDE / Editors
+# ============================================================================
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# PyCharm / IntelliJ
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+
+# Pyright
+.pyright/
+
+# ============================================================================
+# Operating System Files
+# ============================================================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# ============================================================================
+# Jupyter Notebook
+# ============================================================================
+
+.ipynb_checkpoints/
+*.ipynb_checkpoints/
+notebooks/.ipynb_checkpoints/
+notebooks/**/.ipynb_checkpoints/
+
+# Jupyter Notebook metadata
+.jupyter/
+
+# ============================================================================
+# Testing / Coverage
+# ============================================================================
+
+# pytest
+.pytest_cache/
+.cache/
+
+# Coverage
+.coverage
+.coverage.*
+htmlcov/
+*.cover
+.hypothesis/
+.pytest_cache/
+nosetests.xml
+coverage.xml
+*.coveragerc
+
+# tox
+.tox/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# ============================================================================
+# ML / Data Science
+# ============================================================================
+
+# Model files
+*.onnx
+*.pkl
+*.pickle
+*.h5
+*.hdf5
+*.model
+*.joblib
+*.bin
+
+# Data directories
+data/
+datasets/
+raw_data/
+processed_data/
+
+# Model checkpoints
+checkpoints/
+models/
+saved_models/
+
+# TensorBoard
+runs/
+logs/tensorboard/
+
+# Jupyter output
+*.ipynb_output
+
+# ============================================================================
+# PySpark / Big Data
+# ============================================================================
+
+# Spark checkpoints
+spark-warehouse/
+metastore_db/
+derby.log
+
+# Parquet files (uncomment if you don't want to track them)
+# *.parquet
+
+# ============================================================================
+# Logs and Databases
+# ============================================================================
+
+*.log
+logs/
+*.sqlite
+*.db
+
+# ============================================================================
+# AWS / Cloud
+# ============================================================================
+
+# AWS credentials
+.aws/
+*.pem
+credentials
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.envrc
+
+# ============================================================================
+# Docker
+# ============================================================================
+
+# Docker volumes
+docker-compose.override.yml
+
+# ============================================================================
+# Project-Specific
+# ============================================================================
+
+# Claude Code settings
+.claude/
+
+# SonarQube
+.scannerwork/
+sonar-scanner/
+
+# S3 cache (if using local S3 cache)
+.s3_cache/
+
+# Temporary feature files
+*.features.tmp
+
+# Local configuration overrides
+config/local_*.yaml
+config/*_local.yaml
+
+# ============================================================================
+# Documentation Build
+# ============================================================================
+
+# Sphinx documentation
+docs/_build/
+docs/_static/
+docs/_templates/
+
+# MkDocs
+site/
+
+# ============================================================================
+# Misc
+# ============================================================================
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+.~lock.*
+
+# Archives
+*.zip
+*.tar.gz
+*.rar
